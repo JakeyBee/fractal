@@ -1,4 +1,4 @@
-﻿import { zoomAt } from './viewMath.js';
+﻿import { zoomAt, iterationsForScale } from './viewMath.js';
 import { VERTEX_SHADER, FRAGMENT_SHADER } from './shaders.js';
 
 const canvas = document.getElementById('view');
@@ -43,6 +43,7 @@ gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 const uResolution = gl.getUniformLocation(program, 'u_resolution');
 const uCenter = gl.getUniformLocation(program, 'u_center');
 const uUnitsPerPixel = gl.getUniformLocation(program, 'u_unitsPerPixel');
+const uMaxIter = gl.getUniformLocation(program, 'u_maxIter');
 
 // ---------- Drawing ----------
 
@@ -61,6 +62,7 @@ function draw() {
     gl.uniform2f(uResolution, canvas.width, canvas.height);
     gl.uniform2f(uCenter, view.cx, view.cy);
     gl.uniform1f(uUnitsPerPixel, view.scale / canvas.height);
+    gl.uniform1i(uMaxIter, iterationsForScale(view.scale));
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 

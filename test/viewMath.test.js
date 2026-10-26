@@ -1,6 +1,6 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { screenToComplex, zoomAt } from '../public/viewMath.js';
+import { screenToComplex, zoomAt, iterationsForScale, MAX_ITER_CAP } from '../public/viewMath.js';
 
 const view = { cx: -0.5, cy: 0, scale: 3 };
 const W = 800;
@@ -32,4 +32,14 @@ test('zoomAt(0.5) halves the scale', () => {
 test('zoomAt rejects a bad factor', () => {
     assert.throws(() => zoomAt(view, 0, 0, W, H, -1), RangeError);
     assert.throws(() => zoomAt(view, 0, 0, W, H, NaN), RangeError);
+});
+
+test('iterations start at 100 and grow 100 per 10x zoom', () => {
+    assert.equal(iterationsForScale(3), 100);      // no zoom
+    assert.equal(iterationsForScale(0.3), 200);    // 10x
+    assert.equal(iterationsForScale(0.003), 400);  // 1000x
+});
+
+test('iterations never go past the shader cap', () => {
+    assert.equal(iterationsForScale(1e-30), MAX_ITER_CAP);
 });

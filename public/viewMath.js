@@ -23,3 +23,14 @@ export function zoomAt(view, px, py, width, height, factor) {
         scale: view.scale * factor,
     };
 }
+
+// The most iterations the shader will ever run (must match MAX_ITER_CAP in shaders.js)
+export const MAX_ITER_CAP = 2000;
+
+// Deeper zoom needs more steps to tell "inside" from "escapes slowly".
+// 100 at the start, +100 for every 10x of zoom, never more than MAX_ITER_CAP.
+export function iterationsForScale(scale) {
+    const zoom = Math.max(3 / scale, 1); // 3 = the starting scale
+    const iterations = Math.round(100 + 100 * Math.log10(zoom));
+    return Math.min(iterations, MAX_ITER_CAP);
+}

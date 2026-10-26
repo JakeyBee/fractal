@@ -20,8 +20,10 @@ precision mediump float;
 uniform vec2 u_resolution;     // canvas size in pixels
 uniform vec2 u_center;         // view.cx, view.cy
 uniform float u_unitsPerPixel; // view.scale / canvas height
+uniform int u_maxIter;         // iteration budget, grows as you zoom in
 
-const int MAX_ITER = 100;
+// GLSL loops need a fixed limit, so loop up to the cap and stop early at u_maxIter
+const int MAX_ITER_CAP = 2000;
 
 void main() {
     // STEP 1: this pixel -> complex number c
@@ -30,18 +32,19 @@ void main() {
 
     // STEP 2: escape-time loop. z.x = real part, z.y = imaginary part
     vec2 z = vec2(0.0);
-    int n = MAX_ITER;
-    for (int i = 0; i < MAX_ITER; i++) {
+    int n = u_maxIter;
+    for (int i = 0; i < MAX_ITER_CAP; i++) {
+        if (i >= u_maxIter) break;
         if (dot(z, z) > 4.0) { n = i; break; }  // dot(z, z) = zr*zr + zi*zi
         z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
     }
 
     // STEP 3: color. Same formula as the CPU version, but colors are 0..1 instead of 0..255
-    if (n == MAX_ITER) {
+    if (n == u_maxIter) {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         return;
     }
-    float t = sqrt(float(n) / float(MAX_ITER));
+    float t = sqrt(float(n) / float(u_maxIter));
     gl_FragColor = vec4(t, (200.0 / 255.0) * t, (80.0 + 175.0 * t) / 255.0, 1.0);
 }
 `;
