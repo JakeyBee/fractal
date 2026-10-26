@@ -27,6 +27,10 @@
             white-space: nowrap; cursor: pointer;
         }
         #toolbar button:hover { background: rgba(0, 0, 0, 0.8); }
+        /* Fixed widths so the bar doesn't jump around when the names change.
+        ch = the width of one character in this font; 28px = the left + right padding. */
+        #fractal { width: calc(12ch + 28px); }  /* fits "Burning Ship" (12 characters) */
+        #palette { width: calc(7ch + 28px); }   /* fits "Rainbow" (7 characters) */
     </style>
 </head>
 <body>
