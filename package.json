@@ -7,10 +7,11 @@
     "test": "test"
   },
   "scripts": {
-    "dev": "wrangler dev"
+    "dev": "wrangler dev",
+    "test": "node --test"
   },
   "keywords": [],
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "wrangler": "^4.153.0"
   }
