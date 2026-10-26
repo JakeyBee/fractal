@@ -1,4 +1,4 @@
-﻿import { zoomAt, iterationsForScale } from './viewMath.js';
+﻿import { zoomAt, panBy, iterationsForScale } from './viewMath.js';
 import { VERTEX_SHADER, FRAGMENT_SHADER } from './shaders.js';
 
 const canvas = document.getElementById('view');
@@ -86,6 +86,32 @@ canvas.addEventListener('wheel', (event) => {
     view = zoomAt(view, px, py, canvas.width, canvas.height, factor);
     requestDraw();
 }, { passive: false });
+
+// Drag to pan. Pointer events work for mouse, pen, and touch.
+let lastPointer = null; // where the pointer was on the previous move, or null when not dragging
+
+canvas.addEventListener('pointerdown', (event) => {
+    canvas.setPointerCapture(event.pointerId); // keep getting moves even if the pointer leaves the canvas
+    lastPointer = { x: event.clientX, y: event.clientY };
+    canvas.style.cursor = 'grabbing';
+});
+
+canvas.addEventListener('pointermove', (event) => {
+    if (!lastPointer) return; // not dragging
+    const dpr = window.devicePixelRatio || 1;
+    const dx = (event.clientX - lastPointer.x) * dpr;
+    const dy = (event.clientY - lastPointer.y) * dpr;
+    lastPointer = { x: event.clientX, y: event.clientY };
+    view = panBy(view, dx, dy, canvas.height);
+    requestDraw();
+});
+
+function endDrag() {
+    lastPointer = null;
+    canvas.style.cursor = 'grab';
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
 
 window.addEventListener('resize', resize);
 resize();

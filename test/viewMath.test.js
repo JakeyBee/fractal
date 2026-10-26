@@ -1,6 +1,6 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { screenToComplex, zoomAt, iterationsForScale, MAX_ITER_CAP } from '../public/viewMath.js';
+import { screenToComplex, zoomAt, panBy, iterationsForScale, MAX_ITER_CAP } from '../public/viewMath.js';
 
 const view = { cx: -0.5, cy: 0, scale: 3 };
 const W = 800;
@@ -42,4 +42,20 @@ test('iterations start at 100 and grow 100 per 10x zoom', () => {
 
 test('iterations never go past the shader cap', () => {
     assert.equal(iterationsForScale(1e-30), MAX_ITER_CAP);
+});
+
+test('dragging right moves the center left', () => {
+    assert.ok(panBy(view, 100, 0, H).cx < view.cx);
+});
+
+test('dragging down moves the center up', () => {
+    assert.ok(panBy(view, 0, 100, H).cy > view.cy);
+});
+
+test('a drag keeps the grabbed point under the mouse', () => {
+    const grabbed = screenToComplex(view, 200, 150, W, H);
+    const moved = panBy(view, 50, -30, H);
+    const nowUnderMouse = screenToComplex(moved, 250, 120, W, H); // mouse moved +50, -30
+    assert.ok(Math.abs(grabbed.re - nowUnderMouse.re) < 1e-12);
+    assert.ok(Math.abs(grabbed.im - nowUnderMouse.im) < 1e-12);
 });

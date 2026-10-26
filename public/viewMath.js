@@ -24,6 +24,17 @@ export function zoomAt(view, px, py, width, height, factor) {
     };
 }
 
+// Move the view by a mouse drag of (dx, dy) pixels.
+// Dragging right should slide the picture right, so the center moves LEFT.
+export function panBy(view, dx, dy, height) {
+    const unitsPerPixel = view.scale / height;
+    return {
+        cx: view.cx - dx * unitsPerPixel,
+        cy: view.cy + dy * unitsPerPixel, // plus: screen y goes down, math y goes up
+        scale: view.scale,
+    };
+}
+
 // The most iterations the shader will ever run (must match MAX_ITER_CAP in shaders.js)
 export const MAX_ITER_CAP = 2000;
 
