@@ -1,0 +1,17 @@
+{
+  "name": "fractal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "dev": "wrangler dev"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "devDependencies": {
+    "wrangler": "^4.153.0"
+  }
+}
