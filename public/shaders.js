@@ -1,0 +1,47 @@
+﻿// GPU programs, written in GLSL (a small C-like language that runs on the graphics card).
+
+// Vertex shader: places the corners of one big triangle that covers the screen.
+export const VERTEX_SHADER = `
+attribute vec2 a_pos;
+void main() {
+    gl_Position = vec4(a_pos, 0.0, 1.0);
+}
+`;
+
+// Fragment shader: runs once for EVERY pixel, all at the same time.
+// This is the same escape-time loop as before, moved onto the GPU.
+export const FRAGMENT_SHADER = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;     // canvas size in pixels
+uniform vec2 u_center;         // view.cx, view.cy
+uniform float u_unitsPerPixel; // view.scale / canvas height
+
+const int MAX_ITER = 100;
+
+void main() {
+    // STEP 1: this pixel -> complex number c
+    // (gl_FragCoord.y already points up, like the math y axis, so no minus sign here)
+    vec2 c = u_center + (gl_FragCoord.xy - 0.5 * u_resolution) * u_unitsPerPixel;
+
+    // STEP 2: escape-time loop. z.x = real part, z.y = imaginary part
+    vec2 z = vec2(0.0);
+    int n = MAX_ITER;
+    for (int i = 0; i < MAX_ITER; i++) {
+        if (dot(z, z) > 4.0) { n = i; break; }  // dot(z, z) = zr*zr + zi*zi
+        z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+    }
+
+    // STEP 3: color. Same formula as the CPU version, but colors are 0..1 instead of 0..255
+    if (n == MAX_ITER) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    float t = sqrt(float(n) / float(MAX_ITER));
+    gl_FragColor = vec4(t, (200.0 / 255.0) * t, (80.0 + 175.0 * t) / 255.0, 1.0);
+}
+`;
