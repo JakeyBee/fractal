@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -15,20 +15,28 @@
             white-space: pre;      /* keep the line breaks from formatHud */
             pointer-events: none;  /* let drags and scrolls pass through to the canvas */
         }
-        #reset {
-            position: fixed; top: 12px; right: 12px;
+        /* Button bar along the bottom, centered: out of the HUD's way and easy to reach with a thumb */
+        #toolbar {
+            position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px;
+        }
+        #toolbar button {
             padding: 8px 14px; border: none; border-radius: 6px;
             background: rgba(0, 0, 0, 0.6); color: #e8e8ee;
             font: 13px Consolas, Menlo, monospace;
-            cursor: pointer;
+            white-space: nowrap; cursor: pointer;
         }
-        #reset:hover { background: rgba(0, 0, 0, 0.8); }
+        #toolbar button:hover { background: rgba(0, 0, 0, 0.8); }
     </style>
 </head>
 <body>
 <canvas id="view"></canvas>
 <div id="hud"></div>
-<button id="reset" type="button">Reset</button>
+<div id="toolbar">
+    <button id="fractal" type="button" title="Switch fractal (F)">Mandelbrot</button>
+    <button id="palette" type="button" title="Switch colors (C)">Purple</button>
+    <button id="reset" type="button" title="Reset view (R)">Reset</button>
+</div>
 <script type="module" src="main.js"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 ﻿import { zoomAt, panBy, iterationsForScale, formatHud } from './viewMath.js';
 import { VERTEX_SHADER, FRAGMENT_SHADER } from './shaders.js';
+import { FRACTALS, PALETTES, nextIndex } from './designs.js';
 
 const canvas = document.getElementById('view');
 const hud = document.getElementById('hud');
@@ -45,12 +46,22 @@ const uResolution = gl.getUniformLocation(program, 'u_resolution');
 const uCenter = gl.getUniformLocation(program, 'u_center');
 const uUnitsPerPixel = gl.getUniformLocation(program, 'u_unitsPerPixel');
 const uMaxIter = gl.getUniformLocation(program, 'u_maxIter');
+const uFractal = gl.getUniformLocation(program, 'u_fractal');
+const uJuliaC = gl.getUniformLocation(program, 'u_juliaC');
+const uClassic = gl.getUniformLocation(program, 'u_classic');
+const uPalA = gl.getUniformLocation(program, 'u_palA');
+const uPalB = gl.getUniformLocation(program, 'u_palB');
+const uPalC = gl.getUniformLocation(program, 'u_palC');
+const uPalD = gl.getUniformLocation(program, 'u_palD');
 
 // ---------- Drawing ----------
 
-// Where we start, and where Reset goes back to. Object.freeze stops it from being changed by accident.
-const START_VIEW = Object.freeze({ cx: -0.5, cy: 0, scale: 3 });
-let view = { ...START_VIEW }; // a copy we're allowed to change
+// Which fractal and palette are showing (positions in the lists in designs.js)
+let fractalIndex = 0;
+let paletteIndex = 0;
+
+// Each fractal has its own starting view. { ... } makes a copy we're allowed to change.
+let view = { ...FRACTALS[fractalIndex].start };
 
 function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -67,6 +78,19 @@ function draw() {
     gl.uniform1f(uUnitsPerPixel, view.scale / canvas.height);
     const maxIter = iterationsForScale(view.scale);
     gl.uniform1i(uMaxIter, maxIter);
+
+    const fractal = FRACTALS[fractalIndex];
+    gl.uniform1i(uFractal, fractal.type);
+    gl.uniform2fv(uJuliaC, fractal.juliaC ?? [0, 0]); // ?? = use [0, 0] when there's no juliaC
+
+    const palette = PALETTES[paletteIndex];
+    gl.uniform1i(uClassic, palette.classic ? 1 : 0);
+    if (!palette.classic) {
+        gl.uniform3fv(uPalA, palette.a);
+        gl.uniform3fv(uPalB, palette.b);
+        gl.uniform3fv(uPalC, palette.c);
+        gl.uniform3fv(uPalD, palette.d);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     hud.textContent = formatHud(view, maxIter);
 }
@@ -149,15 +173,57 @@ function endPointer(event) {
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
 
-// Reset: the button, or the R key
+// ---------- Buttons and keys ----------
+
+const fractalButton = document.getElementById('fractal');
+const paletteButton = document.getElementById('palette');
+
+// Show the current names on the buttons
+function updateButtons() {
+    fractalButton.textContent = FRACTALS[fractalIndex].name;
+    paletteButton.textContent = PALETTES[paletteIndex].name;
+}
+
+// Reset: back to the current fractal's starting view
 function resetView() {
-    view = { ...START_VIEW };
+    view = { ...FRACTALS[fractalIndex].start };
     requestDraw();
 }
-document.getElementById('reset').addEventListener('click', resetView);
+
+// Next fractal (also resets the view, since each fractal lives in a different spot)
+function nextFractal() {
+    fractalIndex = nextIndex(fractalIndex, FRACTALS.length);
+    updateButtons();
+    resetView();
+}
+
+// Next palette (keeps the view, so you can recolor where you are)
+function nextPalette() {
+    paletteIndex = nextIndex(paletteIndex, PALETTES.length);
+    updateButtons();
+    requestDraw();
+}
+
+// Reset everything: first fractal, first palette, starting view
+function resetAll() {
+    fractalIndex = 0;
+    paletteIndex = 0;
+    updateButtons();
+    resetView();
+}
+
+fractalButton.addEventListener('click', nextFractal);
+paletteButton.addEventListener('click', nextPalette);
+document.getElementById('reset').addEventListener('click', resetAll);
+
 window.addEventListener('keydown', (event) => {
-    if (event.key === 'r' || event.key === 'R') resetView();
+    const key = event.key.toLowerCase();
+    if (key === 'r') resetAll();
+    if (key === 'f') nextFractal();
+    if (key === 'c') nextPalette();
 });
+
+updateButtons();
 
 window.addEventListener('resize', resize);
 resize();
