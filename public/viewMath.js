@@ -45,3 +45,20 @@ export function iterationsForScale(scale) {
     const iterations = Math.round(100 + 100 * Math.log10(zoom));
     return Math.min(iterations, MAX_ITER_CAP);
 }
+
+// Build the text for the on-screen readout: where you are and how deep.
+export function formatHud(view, maxIter) {
+    // Show more decimal places the deeper you zoom (4 at the start, up to 15)
+    const digits = Math.min(15, Math.max(4, Math.ceil(-Math.log10(view.scale)) + 4));
+    const zoom = 3 / view.scale;
+    let zoomText;
+    if (zoom >= 10000) zoomText = zoom.toExponential(1);  // 2.3e+4
+    else if (zoom < 10) zoomText = zoom.toFixed(1);       // 1.0
+    else zoomText = String(Math.round(zoom));             // 437
+    return [
+        `re   ${view.cx.toFixed(digits)}`,
+        `im   ${view.cy.toFixed(digits)}`,
+        `zoom ${zoomText}x`,
+        `iter ${maxIter}`,
+    ].join('\n');
+}

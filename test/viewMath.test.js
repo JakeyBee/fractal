@@ -1,6 +1,6 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { screenToComplex, zoomAt, panBy, iterationsForScale, MAX_ITER_CAP } from '../public/viewMath.js';
+import { screenToComplex, zoomAt, panBy, iterationsForScale, MAX_ITER_CAP, formatHud } from '../public/viewMath.js';
 
 const view = { cx: -0.5, cy: 0, scale: 3 };
 const W = 800;
@@ -58,4 +58,14 @@ test('a drag keeps the grabbed point under the mouse', () => {
     const nowUnderMouse = screenToComplex(moved, 250, 120, W, H); // mouse moved +50, -30
     assert.ok(Math.abs(grabbed.re - nowUnderMouse.re) < 1e-12);
     assert.ok(Math.abs(grabbed.im - nowUnderMouse.im) < 1e-12);
+});
+
+test('HUD at the starting view', () => {
+    assert.equal(formatHud(view, 100), 're   -0.5000\nim   0.0000\nzoom 1.0x\niter 100');
+});
+
+test('HUD shows more digits and an exponent when zoomed deep', () => {
+    const text = formatHud({ cx: -0.743643, cy: 0.131825, scale: 3e-5 }, 600);
+    assert.match(text, /re {3}-0\.743643000/);   // 9 decimals at this depth
+    assert.match(text, /zoom 1\.0e\+5x/);
 });

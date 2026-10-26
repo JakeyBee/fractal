@@ -1,7 +1,8 @@
-﻿import { zoomAt, panBy, iterationsForScale } from './viewMath.js';
+﻿import { zoomAt, panBy, iterationsForScale, formatHud } from './viewMath.js';
 import { VERTEX_SHADER, FRAGMENT_SHADER } from './shaders.js';
 
 const canvas = document.getElementById('view');
+const hud = document.getElementById('hud');
 const gl = canvas.getContext('webgl');
 if (!gl) {
     document.body.textContent = 'WebGL is not available in this browser.';
@@ -62,8 +63,10 @@ function draw() {
     gl.uniform2f(uResolution, canvas.width, canvas.height);
     gl.uniform2f(uCenter, view.cx, view.cy);
     gl.uniform1f(uUnitsPerPixel, view.scale / canvas.height);
-    gl.uniform1i(uMaxIter, iterationsForScale(view.scale));
+    const maxIter = iterationsForScale(view.scale);
+    gl.uniform1i(uMaxIter, maxIter);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    hud.textContent = formatHud(view, maxIter);
 }
 
 let drawQueued = false;
