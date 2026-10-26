@@ -90,31 +90,62 @@ canvas.addEventListener('wheel', (event) => {
     requestDraw();
 }, { passive: false });
 
-// Drag to pan. Pointer events work for mouse, pen, and touch.
-let lastPointer = null; // where the pointer was on the previous move, or null when not dragging
+// Mouse, pen, and touch: one pointer drags, two fingers pinch-zoom.
+const pointers = new Map(); // every finger (or mouse) currently down: pointerId -> { x, y }
+let lastPinch = null;       // midpoint and finger distance from the previous two-finger move
+
+// Pointer position in device pixels (the canvas's real pixels)
+function devicePos(event) {
+    const dpr = window.devicePixelRatio || 1;
+    return { x: event.clientX * dpr, y: event.clientY * dpr };
+}
+
+// The point between the two fingers, and how far apart they are
+function pinchInfo() {
+    const [a, b] = [...pointers.values()];
+    return {
+        mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        dist: Math.hypot(a.x - b.x, a.y - b.y),
+    };
+}
 
 canvas.addEventListener('pointerdown', (event) => {
     canvas.setPointerCapture(event.pointerId); // keep getting moves even if the pointer leaves the canvas
-    lastPointer = { x: event.clientX, y: event.clientY };
+    pointers.set(event.pointerId, devicePos(event));
+    lastPinch = pointers.size === 2 ? pinchInfo() : null; // second finger down = pinch starts
     canvas.style.cursor = 'grabbing';
 });
 
 canvas.addEventListener('pointermove', (event) => {
-    if (!lastPointer) return; // not dragging
-    const dpr = window.devicePixelRatio || 1;
-    const dx = (event.clientX - lastPointer.x) * dpr;
-    const dy = (event.clientY - lastPointer.y) * dpr;
-    lastPointer = { x: event.clientX, y: event.clientY };
-    view = panBy(view, dx, dy, canvas.height);
-    requestDraw();
+    if (!pointers.has(event.pointerId)) return; // this pointer isn't pressed
+    const prev = pointers.get(event.pointerId);
+    const curr = devicePos(event);
+    pointers.set(event.pointerId, curr);
+
+    if (pointers.size === 1) {
+        // One pointer: drag
+        view = panBy(view, curr.x - prev.x, curr.y - prev.y, canvas.height);
+        requestDraw();
+    } else if (pointers.size === 2 && lastPinch) {
+        // Two fingers: move with the midpoint, zoom by how much the gap changed
+        const now = pinchInfo();
+        if (now.dist > 0 && lastPinch.dist > 0) {
+            view = panBy(view, now.mid.x - lastPinch.mid.x, now.mid.y - lastPinch.mid.y, canvas.height);
+            // fingers apart = dist grows = factor below 1 = zoom in
+            view = zoomAt(view, now.mid.x, now.mid.y, canvas.width, canvas.height, lastPinch.dist / now.dist);
+            requestDraw();
+        }
+        lastPinch = now;
+    }
 });
 
-function endDrag() {
-    lastPointer = null;
-    canvas.style.cursor = 'grab';
+function endPointer(event) {
+    pointers.delete(event.pointerId);
+    lastPinch = pointers.size === 2 ? pinchInfo() : null;
+    if (pointers.size === 0) canvas.style.cursor = 'grab';
 }
-canvas.addEventListener('pointerup', endDrag);
-canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
 
 window.addEventListener('resize', resize);
 resize();
