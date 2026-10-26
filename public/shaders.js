@@ -35,7 +35,9 @@ void main() {
     int n = u_maxIter;
     for (int i = 0; i < MAX_ITER_CAP; i++) {
         if (i >= u_maxIter) break;
-        if (dot(z, z) > 4.0) { n = i; break; }  // dot(z, z) = zr*zr + zi*zi
+        // Escape at |z| > 16 instead of 2. Same points escape, but the bigger radius
+        // makes the smooth-color formula below accurate.
+        if (dot(z, z) > 256.0) { n = i; break; }  // dot(z, z) = zr*zr + zi*zi
         z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
     }
 
@@ -44,7 +46,10 @@ void main() {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         return;
     }
-    float t = sqrt(float(n) / float(u_maxIter));
+    // Smooth coloring: add a fraction based on how far past the edge z flew,
+    // so neighbouring pixels blend instead of jumping from one band to the next.
+    float smoothN = float(n) + 1.0 - log2(0.5 * log(dot(z, z)));
+    float t = sqrt(clamp(smoothN / float(u_maxIter), 0.0, 1.0));
     gl_FragColor = vec4(t, (200.0 / 255.0) * t, (80.0 + 175.0 * t) / 255.0, 1.0);
 }
 `;
