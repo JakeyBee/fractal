@@ -48,7 +48,9 @@ const uMaxIter = gl.getUniformLocation(program, 'u_maxIter');
 
 // ---------- Drawing ----------
 
-let view = { cx: -0.5, cy: 0, scale: 3 };
+// Where we start, and where Reset goes back to. Object.freeze stops it from being changed by accident.
+const START_VIEW = Object.freeze({ cx: -0.5, cy: 0, scale: 3 });
+let view = { ...START_VIEW }; // a copy we're allowed to change
 
 function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -146,6 +148,16 @@ function endPointer(event) {
 }
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
+
+// Reset: the button, or the R key
+function resetView() {
+    view = { ...START_VIEW };
+    requestDraw();
+}
+document.getElementById('reset').addEventListener('click', resetView);
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'r' || event.key === 'R') resetView();
+});
 
 window.addEventListener('resize', resize);
 resize();
